@@ -6,7 +6,8 @@
         {% for image in images %}
             <div>
                 <h4>{{ image.0 }}</h4>
-                <img src="{{ image.1 }}">
+                <div>{{ image.1 }}</div>
+                <img src="{{ image.2 }}">
             </div>
             <hr>
         {% endfor %}
