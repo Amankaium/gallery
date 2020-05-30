@@ -1,43 +1,75 @@
-from flask import Flask, render_template, request
+﻿from flask import Flask, render_template, request
 from openpyxl import load_workbook
+from database import *
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
-    # мы делим строку на [описание, ссылка] картинки
-    images = []
-    excel = load_workbook("gallery.xlsx")
-    page = excel["Лист1"]
-    for row in page:
-        url = row[0].value
-        title = row[2].value
-        lst = [title, url] 
-        images.append(lst) 
-
+    if request.method == "GET":
+        images = session.query(Picture).all()
+    elif request.method == "POST":
+        search_key = request.form.get("search_key")
+        images = session.query(Picture).\
+            filter(Picture.name.like("%{}%".format(search_key))).all()
     return render_template("index.html", images=images)
 
 @app.route("/add")
 def add():
-    return render_template("form.html")
+    authors = session.query(Author)
+    session.commit()
+    return render_template("form.html", authors=authors)
 
 @app.route("/reciever", methods=["POST"])
 def reciever():
-    description = request.form.get("description")
     url = request.form.get("url")
-    title = request.form.get("title")
+    name = request.form.get("name")
+    description = request.form.get("description")
+    price = int(request.form.get("price"))
+    author = request.form.get("author")
+    if author:
+        author = int(author)
 
-    excel = load_workbook("gallery.xlsx")
-    sheet = excel["Лист1"]
-    sheet.append([url, description, title])
-    excel.save('gallery.xlsx')
+    new_image = Picture(
+        name=name,
+        url=url,
+        description=description,
+        price=price,
+        author=author  
+    )
 
-    return render_template("form.html")
+    session.add(new_image)
+    session.commit()
+
+    return render_template("success.html")
+
+@app.route("/author_reciever", methods=["GET", "POST"])
+def author_reciever():
+    if request.method == "POST":
+        name = request.form.get("name")
+        country = request.form.get("country")
+        new_author = Author(
+            name=name,
+            country=country
+        )
+
+        session.add(new_author)
+        session.commit()
+
+        return render_template("success.html")
+    
+    elif request.method == "GET":
+        return render_template("author_form.html")
 
 
-@app.route("/details/<number>")
-def details(number): # 2
-    excel = load_workbook("gallery.xlsx")
-    page = excel["Лист1"]
-    lst = page[str(number)]
-    return render_template("details.html", lst=lst)
+@app.route("/details/<int:id>")
+def details(id):
+    image = session.execute('''
+        SELECT p.name, a.name AS author, p.price, p.description, p.url
+        FROM Picture AS p
+        JOIN Author AS a
+        ON p.author = a.id
+        WHERE p.id=%d
+    ''' % id).first()
+    session.commit()
+    return render_template("details.html", image=image)

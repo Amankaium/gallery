@@ -14,7 +14,9 @@
     <div class="content">
         <nav>
             <a href="{{ url_for('index') }}">Gallery</a>
-            <a href="{{ url_for('add') }}">Add</a>
+            <a href="{{ url_for('add') }}">Add Picture</a>
+            <a href="{{ url_for('author_reciever') }}">Add Artist</a>
+            
         </nav>
         <br>
         {% block content %}
