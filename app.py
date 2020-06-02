@@ -62,8 +62,14 @@ def author_reciever():
         return render_template("author_form.html")
 
 
-@app.route("/details/<int:id>")
+@app.route("/details/<int:id>", methods=["GET", "POST"])
 def details(id):
+    if request.method == "POST":
+        image = session.query(Picture).get(id)
+        session.delete(image)
+        session.commit()
+        return render_template("success.html")
+       
     image = session.execute('''
         SELECT p.name, a.name AS author, p.price, p.description, p.url
         FROM Picture AS p
